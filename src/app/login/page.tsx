@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Activity } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,11 @@ export default function LoginPage() {
           {error && <p role="alert" className="rounded-xl bg-red-500/10 p-3 text-sm text-red-600">{error}</p>}
           <Button className="h-11 w-full" disabled={loading}>{loading ? "Signing in…" : "Sign in"}</Button>
         </form>
+        <div className="mt-5 text-center">
+          <Link href="/forgot-password" className="text-sm font-semibold text-primary transition hover:brightness-110">
+            Forgot password?
+          </Link>
+        </div>
       </section>
     </main>
   );
