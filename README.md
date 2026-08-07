@@ -1,6 +1,6 @@
 # OrthoRegistry
 
-Phase 1 of a mobile-first orthopedic surgical registry built with Next.js 15, TypeScript, Tailwind CSS, shadcn/ui conventions, and Supabase.
+A mobile-first orthopedic surgical registry built with Next.js 15, TypeScript, Tailwind CSS, shadcn/ui conventions, and Supabase.
 
 ## Features
 
@@ -10,8 +10,12 @@ Phase 1 of a mobile-first orthopedic surgical registry built with Next.js 15, Ty
 - Search by MRN or name
 - Zod validation and automatic BMI calculation
 - Light and dark modes
+- Rotator cuff surgery create, view, edit, and delete workflows
+- Patient-linked surgical history
 
-Surgery functionality is intentionally deferred.
+## Phase 2 database migration
+
+Apply `supabase/migrations/202608070001_phase_2_rotator_cuff_surgeries.sql` in the Supabase SQL editor before using the surgery module. It adds only missing surgery columns, constraints, a patient foreign key, and an index. It does not update or delete patient data and does not replace existing RLS policies.
 
 ## Local development
 
