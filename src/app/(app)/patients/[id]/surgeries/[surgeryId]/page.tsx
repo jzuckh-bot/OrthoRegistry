@@ -25,6 +25,8 @@ export default async function SurgeryDetailPage({ params }: { params: Promise<{ 
     ["Tangent sign", surgery.tangent_sign],
     ["Subscapularis tear", yesNo(surgery.subscapularis_tear)],
     ["Biceps lesion", yesNo(surgery.biceps_lesion)],
+    ...(surgery.red_tear == null ? [] : [["Red tear", yesNo(surgery.red_tear)]]),
+    ...(surgery.anterior_cable_tear == null ? [] : [["Anterior cable tear", yesNo(surgery.anterior_cable_tear)]]),
     ["Repair type", surgery.repair_type],
     ["Number of anchors", surgery.number_of_anchors],
     ["Biceps procedure", surgery.biceps_procedure],

@@ -39,6 +39,8 @@ export interface Surgery {
   tangent_sign: TangentSign;
   subscapularis_tear: boolean;
   biceps_lesion: boolean;
+  red_tear: boolean | null;
+  anterior_cable_tear: boolean | null;
   repair_type: RepairType;
   number_of_anchors: number;
   biceps_procedure: BicepsProcedure;
