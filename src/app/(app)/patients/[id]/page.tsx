@@ -15,7 +15,15 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
     supabase.from("surgeries").select("*").eq("patient_id", id).order("surgery_date", { ascending: false }).returns<Surgery[]>(),
   ]);
   if (!patient) notFound();
-  const details = [["MRN", patient.mrn], ["Birthday", formatDate(patient.birthday)], ["Sex", patient.sex], ["Height", `${patient.height} cm`], ["Weight", `${patient.weight} kg`], ["BMI", patient.bmi], ["Created", formatDate(patient.created_at)]];
+  const details = [
+    ["MRN", patient.mrn],
+    ["Birthday", formatDate(patient.birthday)],
+    ["Sex", patient.sex],
+    ["Height", patient.height == null ? "Not available" : `${patient.height} cm`],
+    ["Weight", patient.weight == null ? "Not available" : `${patient.weight} kg`],
+    ["BMI", patient.bmi ?? "Not available"],
+    ["Created", formatDate(patient.created_at)],
+  ];
   return (
     <div className="mx-auto max-w-4xl">
       <Link href="/patients" className="inline-flex items-center gap-2 text-sm text-muted hover:text-foreground"><ArrowLeft className="size-4" />Back to patients</Link>

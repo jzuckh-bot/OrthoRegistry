@@ -6,9 +6,9 @@ export interface Patient {
   name: string;
   birthday: string;
   sex: Sex;
-  height: number;
-  weight: number;
-  bmi: number;
+  height: number | null;
+  weight: number | null;
+  bmi: number | null;
   created_at: string;
 }
 

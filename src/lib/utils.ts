@@ -5,7 +5,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function calculateBmi(height?: number, weight?: number) {
+export function calculateBmi(height?: number | null, weight?: number | null) {
   if (!height || !weight) return null;
   return Number((weight / (height / 100) ** 2).toFixed(1));
 }
