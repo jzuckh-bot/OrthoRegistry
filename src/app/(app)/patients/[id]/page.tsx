@@ -19,6 +19,8 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
     ["MRN", patient.mrn],
     ["Birthday", formatDate(patient.birthday)],
     ["Sex", patient.sex],
+    ...(patient.diabetes_mellitus ? [["Diabetes mellitus", patient.diabetes_mellitus]] : []),
+    ...(patient.smoking_status ? [["Smoking status", patient.smoking_status]] : []),
     ["Height", patient.height == null ? "Not available" : `${patient.height} cm`],
     ["Weight", patient.weight == null ? "Not available" : `${patient.weight} kg`],
     ["BMI", patient.bmi ?? "Not available"],

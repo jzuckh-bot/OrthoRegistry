@@ -1,4 +1,6 @@
 export type Sex = "Male" | "Female" | "Other";
+export type DiabetesMellitusStatus = "Yes" | "No";
+export type SmokingStatus = "Never" | "Former" | "Current";
 
 export interface Patient {
   id: string;
@@ -6,6 +8,8 @@ export interface Patient {
   name: string;
   birthday: string;
   sex: Sex;
+  diabetes_mellitus: DiabetesMellitusStatus | null;
+  smoking_status: SmokingStatus | null;
   height: number | null;
   weight: number | null;
   bmi: number | null;

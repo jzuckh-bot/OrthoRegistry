@@ -21,9 +21,15 @@ export function PatientForm({ patient }: { patient?: Patient }) {
       name: patient.name,
       birthday: patient.birthday,
       sex: patient.sex,
+      diabetes_mellitus: patient.diabetes_mellitus ?? "",
+      smoking_status: patient.smoking_status ?? "",
       height: patient.height ?? undefined,
       weight: patient.weight ?? undefined,
-    } : { sex: "Male" },
+    } : {
+      sex: "Male",
+      diabetes_mellitus: "",
+      smoking_status: "",
+    },
   });
   const [height, weight] = watch(["height", "weight"]);
   const bmi = useMemo(() => calculateBmi(Number(height), Number(weight)), [height, weight]);
@@ -35,6 +41,8 @@ export function PatientForm({ patient }: { patient?: Patient }) {
       height: values.height ?? null,
       weight: values.weight ?? null,
       bmi: calculateBmi(values.height, values.weight),
+      diabetes_mellitus: values.diabetes_mellitus || null,
+      smoking_status: values.smoking_status || null,
     };
     const supabase = createClient();
     const result = patient
@@ -54,6 +62,8 @@ export function PatientForm({ patient }: { patient?: Patient }) {
         {field("name", "Full name", { placeholder: "Patient name" })}
         {field("birthday", "Birthday", { type: "date" })}
         <label className="block text-sm font-medium">Sex<select className="field mt-2" {...register("sex")}><option>Male</option><option>Female</option><option>Other</option></select></label>
+        <label className="block text-sm font-medium">Diabetes mellitus (DM)<select className="field mt-2" {...register("diabetes_mellitus")}><option value="">Unknown / Not recorded</option><option value="Yes">Yes</option><option value="No">No</option></select></label>
+        <label className="block text-sm font-medium">Smoking status<select className="field mt-2" {...register("smoking_status")}><option value="">Unknown / Not recorded</option><option value="Never">Never</option><option value="Former">Former</option><option value="Current">Current</option></select></label>
         {field("height", "Height (cm) · Optional", { type: "number", step: "0.1", inputMode: "decimal" })}
         {field("weight", "Weight (kg) · Optional", { type: "number", step: "0.1", inputMode: "decimal" })}
       </div>
