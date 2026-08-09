@@ -22,6 +22,9 @@ export function SurgeryForm({ patientId, surgery }: { patientId: string; surgery
     defaultValues: surgery ? {
       surgery_date: surgery.surgery_date,
       surgeon: surgery.surgeon ?? null,
+      preop_imaging_source: surgery.preop_imaging_source ?? null,
+      preop_ultrasound_date: surgery.preop_ultrasound_date ?? "",
+      preop_mri_date: surgery.preop_mri_date ?? "",
       side: surgery.side,
       diagnosis: surgery.diagnosis,
       patte_grade: surgery.patte_grade,
@@ -40,6 +43,9 @@ export function SurgeryForm({ patientId, surgery }: { patientId: string; surgery
     } : {
       surgery_date: today(),
       surgeon: null,
+      preop_imaging_source: null,
+      preop_ultrasound_date: "",
+      preop_mri_date: "",
       patte_grade: 1,
       tangent_sign: "Negative",
       subscapularis_tear: false,
@@ -60,6 +66,8 @@ export function SurgeryForm({ patientId, surgery }: { patientId: string; surgery
     const supabase = createClient();
     const payload = {
       ...values,
+      preop_ultrasound_date: values.preop_imaging_source === "Ultrasound" ? values.preop_ultrasound_date || null : null,
+      preop_mri_date: values.preop_imaging_source === "MRI" ? values.preop_mri_date || null : null,
       operative_notes: values.operative_notes.trim() || null,
     };
     const result = surgery
@@ -85,6 +93,13 @@ export function SurgeryForm({ patientId, surgery }: { patientId: string; surgery
         </label>
         <Controller name="surgeon" control={control} render={({ field }) => <SelectionCards label="Surgeon" columns={3} options={[{ value: "蔣恩榮" }, { value: "陳昆暉" }, { value: "馬瑄孝" }]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value) }} selected={field.value ?? undefined} />} />
         <SelectionCards label="Side" options={[{ value: "Right" }, { value: "Left" }]} registration={registration("side")} selected={selected.side} error={errors.side} />
+      </section>
+
+      <section className="surface space-y-7 p-5 sm:p-7">
+        <h2 className="text-lg font-bold">Preoperative imaging</h2>
+        <Controller name="preop_imaging_source" control={control} render={({ field }) => <div><SelectionCards label="Imaging source" columns={3} options={[{ value: "Ultrasound" }, { value: "MRI" }, { value: "Cloud imaging" }]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value) }} selected={field.value ?? undefined} />{field.value && <button type="button" className="mt-3 text-sm font-semibold text-primary" onClick={() => { field.onChange(null); setValue("preop_ultrasound_date", ""); setValue("preop_mri_date", ""); }}>Clear selection</button>}</div>} />
+        {selected.preop_imaging_source === "Ultrasound" && <label className="block text-sm font-semibold">Ultrasound examination date<Input type="date" className="mt-3 h-12 text-base" {...register("preop_ultrasound_date")} /></label>}
+        {selected.preop_imaging_source === "MRI" && <label className="block text-sm font-semibold">MRI examination date<Input type="date" className="mt-3 h-12 text-base" {...register("preop_mri_date")} /></label>}
       </section>
 
       <section className="surface space-y-7 p-5 sm:p-7">

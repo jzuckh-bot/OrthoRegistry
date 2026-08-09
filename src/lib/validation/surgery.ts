@@ -3,6 +3,9 @@ import { z } from "zod";
 export const surgerySchema = z.object({
   surgery_date: z.string().min(1, "Surgery date is required"),
   surgeon: z.enum(["蔣恩榮", "陳昆暉", "馬瑄孝"]).nullable(),
+  preop_imaging_source: z.enum(["Ultrasound", "MRI", "Cloud imaging"]).nullable(),
+  preop_ultrasound_date: z.string(),
+  preop_mri_date: z.string(),
   side: z.enum(["Right", "Left"], { required_error: "Select a side" }),
   diagnosis: z.enum([
     "Partial-thickness supraspinatus tear",

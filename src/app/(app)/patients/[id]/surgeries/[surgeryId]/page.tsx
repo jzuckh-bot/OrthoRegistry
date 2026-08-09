@@ -20,6 +20,9 @@ export default async function SurgeryDetailPage({ params }: { params: Promise<{ 
   const details = [
     ["Surgery date", formatDate(surgery.surgery_date)],
     ...(surgery.surgeon ? [["Surgeon", surgery.surgeon]] : []),
+    ...(surgery.preop_imaging_source ? [["Preoperative imaging", surgery.preop_imaging_source]] : []),
+    ...(surgery.preop_imaging_source === "Ultrasound" && surgery.preop_ultrasound_date ? [["Ultrasound examination date", formatDate(surgery.preop_ultrasound_date)]] : []),
+    ...(surgery.preop_imaging_source === "MRI" && surgery.preop_mri_date ? [["MRI examination date", formatDate(surgery.preop_mri_date)]] : []),
     ["Side", surgery.side],
     ["Diagnosis", surgery.diagnosis],
     ["Patte grade", surgery.patte_grade],

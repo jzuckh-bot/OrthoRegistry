@@ -29,12 +29,16 @@ export type TangentSign = "Positive" | "Negative";
 export type RepairType = "Single row" | "Double row" | "Partial repair";
 export type BicepsProcedure = "None" | "Tenotomy" | "Tenodesis";
 export type Surgeon = "蔣恩榮" | "陳昆暉" | "馬瑄孝";
+export type PreopImagingSource = "Ultrasound" | "MRI" | "Cloud imaging";
 
 export interface Surgery {
   id: string;
   patient_id: string;
   surgery_date: string;
   surgeon: Surgeon | null;
+  preop_imaging_source: PreopImagingSource | null;
+  preop_ultrasound_date: string | null;
+  preop_mri_date: string | null;
   side: SurgerySide;
   diagnosis: SurgeryDiagnosis;
   patte_grade: PatteGrade;
