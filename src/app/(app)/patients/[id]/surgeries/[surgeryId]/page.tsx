@@ -28,8 +28,12 @@ export default async function SurgeryDetailPage({ params }: { params: Promise<{ 
     ...(surgery.red_tear == null ? [] : [["Red tear", yesNo(surgery.red_tear)]]),
     ...(surgery.anterior_cable_tear == null ? [] : [["Anterior cable tear", yesNo(surgery.anterior_cable_tear)]]),
     ["Repair type", surgery.repair_type],
+    ...(surgery.margin_convergence == null ? [] : [["Margin convergence", yesNo(surgery.margin_convergence)]]),
+    ...(surgery.graft_use == null ? [] : [["Graft use", yesNo(surgery.graft_use)]]),
+    ...(surgery.medialization == null ? [] : [["Medialization", yesNo(surgery.medialization)]]),
     ["Number of anchors", surgery.number_of_anchors],
     ["Biceps procedure", surgery.biceps_procedure],
+    ...(surgery.operative_notes ? [["Operative notes", surgery.operative_notes]] : []),
   ];
   return (
     <div className="mx-auto max-w-4xl">
@@ -39,7 +43,7 @@ export default async function SurgeryDetailPage({ params }: { params: Promise<{ 
         <div className="flex gap-2"><Link href={`/patients/${id}/surgeries/${surgeryId}/edit`}><Button variant="secondary" className="h-11"><Pencil className="size-4" />Edit</Button></Link><DeleteSurgeryButton id={surgeryId} patientId={id} /></div>
       </div>
       <section className="surface mt-8 grid gap-px overflow-hidden bg-border sm:grid-cols-2">
-        {details.map(([label, value]) => <div key={String(label)} className="bg-card p-5"><p className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</p><p className="mt-2 font-medium">{value}</p></div>)}
+        {details.map(([label, value]) => <div key={String(label)} className={label === "Operative notes" ? "bg-card p-5 sm:col-span-2" : "bg-card p-5"}><p className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</p><p className={label === "Operative notes" ? "mt-2 whitespace-pre-wrap font-medium" : "mt-2 font-medium"}>{value}</p></div>)}
       </section>
     </div>
   );

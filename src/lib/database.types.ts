@@ -42,8 +42,12 @@ export interface Surgery {
   red_tear: boolean | null;
   anterior_cable_tear: boolean | null;
   repair_type: RepairType;
+  margin_convergence: boolean | null;
+  graft_use: boolean | null;
+  medialization: boolean | null;
   number_of_anchors: number;
   biceps_procedure: BicepsProcedure;
+  operative_notes: string | null;
   created_at: string;
 }
 

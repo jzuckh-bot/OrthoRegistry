@@ -30,8 +30,12 @@ export function SurgeryForm({ patientId, surgery }: { patientId: string; surgery
       red_tear: surgery.red_tear ?? null,
       anterior_cable_tear: surgery.anterior_cable_tear ?? null,
       repair_type: surgery.repair_type,
+      margin_convergence: surgery.margin_convergence ?? null,
+      graft_use: surgery.graft_use ?? null,
+      medialization: surgery.medialization ?? null,
       number_of_anchors: surgery.number_of_anchors,
       biceps_procedure: surgery.biceps_procedure,
+      operative_notes: surgery.operative_notes ?? "",
     } : {
       surgery_date: today(),
       patte_grade: 1,
@@ -40,17 +44,25 @@ export function SurgeryForm({ patientId, surgery }: { patientId: string; surgery
       biceps_lesion: false,
       red_tear: null,
       anterior_cable_tear: null,
+      margin_convergence: null,
+      graft_use: null,
+      medialization: null,
       number_of_anchors: 0,
       biceps_procedure: "None",
+      operative_notes: "",
     },
   });
 
   async function submit(values: SurgeryFormValues) {
     setServerError("");
     const supabase = createClient();
+    const payload = {
+      ...values,
+      operative_notes: values.operative_notes.trim() || null,
+    };
     const result = surgery
-      ? await supabase.from("surgeries").update(values).eq("id", surgery.id)
-      : await supabase.from("surgeries").insert({ ...values, patient_id: patientId });
+      ? await supabase.from("surgeries").update(payload).eq("id", surgery.id)
+      : await supabase.from("surgeries").insert({ ...payload, patient_id: patientId });
     if (result.error) return setServerError(result.error.message);
     router.push(`/patients/${patientId}`);
     router.refresh();
@@ -90,6 +102,9 @@ export function SurgeryForm({ patientId, surgery }: { patientId: string; surgery
       <section className="surface space-y-7 p-5 sm:p-7">
         <h2 className="text-lg font-bold">Repair</h2>
         <SelectionCards label="Repair type" options={[{ value: "Single row" }, { value: "Double row" }, { value: "Partial repair" }]} registration={registration("repair_type")} selected={selected.repair_type} error={errors.repair_type} />
+        <Controller name="margin_convergence" control={control} render={({ field }) => <SelectionCards label="Margin convergence" options={[{ value: "true", label: "Yes" }, { value: "false", label: "No" }]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value === "true") }} selected={field.value == null ? undefined : String(field.value)} />} />
+        <Controller name="graft_use" control={control} render={({ field }) => <SelectionCards label="Graft use" options={[{ value: "true", label: "Yes" }, { value: "false", label: "No" }]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value === "true") }} selected={field.value == null ? undefined : String(field.value)} />} />
+        <Controller name="medialization" control={control} render={({ field }) => <SelectionCards label="Medialization" options={[{ value: "true", label: "Yes" }, { value: "false", label: "No" }]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value === "true") }} selected={field.value == null ? undefined : String(field.value)} />} />
         <div>
           <p className="text-sm font-semibold">Number of anchors</p>
           <div className="mt-3 flex items-center justify-between rounded-2xl border bg-card p-2">
@@ -101,6 +116,14 @@ export function SurgeryForm({ patientId, surgery }: { patientId: string; surgery
           {errors.number_of_anchors && <p className="mt-2 text-xs text-red-600">{errors.number_of_anchors.message}</p>}
         </div>
         <SelectionCards label="Biceps procedure" columns={3} options={[{ value: "None" }, { value: "Tenotomy" }, { value: "Tenodesis" }]} registration={registration("biceps_procedure")} selected={selected.biceps_procedure} error={errors.biceps_procedure} />
+        <label className="block text-sm font-semibold">
+          Operative notes
+          <textarea
+            className="field mt-3 min-h-36 resize-y px-4 py-3 text-base"
+            placeholder="Add operative details..."
+            {...register("operative_notes")}
+          />
+        </label>
       </section>
 
       {serverError && <p role="alert" className="rounded-xl bg-red-500/10 p-4 text-sm text-red-600">{serverError}</p>}

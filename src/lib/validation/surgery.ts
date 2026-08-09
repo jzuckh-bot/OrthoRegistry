@@ -15,8 +15,12 @@ export const surgerySchema = z.object({
   red_tear: z.boolean().nullable(),
   anterior_cable_tear: z.boolean().nullable(),
   repair_type: z.enum(["Single row", "Double row", "Partial repair"]),
+  margin_convergence: z.boolean().nullable(),
+  graft_use: z.boolean().nullable(),
+  medialization: z.boolean().nullable(),
   number_of_anchors: z.coerce.number().int("Use a whole number").min(0, "Cannot be negative").max(20, "Maximum is 20"),
   biceps_procedure: z.enum(["None", "Tenotomy", "Tenodesis"]),
+  operative_notes: z.string(),
 });
 
 export type SurgeryFormValues = z.infer<typeof surgerySchema>;
