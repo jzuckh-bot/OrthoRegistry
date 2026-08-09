@@ -19,6 +19,7 @@ export default async function SurgeryDetailPage({ params }: { params: Promise<{ 
   if (!patient || !surgery) notFound();
   const details = [
     ["Surgery date", formatDate(surgery.surgery_date)],
+    ...(surgery.surgeon ? [["Surgeon", surgery.surgeon]] : []),
     ["Side", surgery.side],
     ["Diagnosis", surgery.diagnosis],
     ["Patte grade", surgery.patte_grade],

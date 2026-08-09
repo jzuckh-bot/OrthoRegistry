@@ -21,6 +21,7 @@ export function SurgeryForm({ patientId, surgery }: { patientId: string; surgery
     resolver: zodResolver(surgerySchema),
     defaultValues: surgery ? {
       surgery_date: surgery.surgery_date,
+      surgeon: surgery.surgeon ?? null,
       side: surgery.side,
       diagnosis: surgery.diagnosis,
       patte_grade: surgery.patte_grade,
@@ -38,6 +39,7 @@ export function SurgeryForm({ patientId, surgery }: { patientId: string; surgery
       operative_notes: surgery.operative_notes ?? "",
     } : {
       surgery_date: today(),
+      surgeon: null,
       patte_grade: 1,
       tangent_sign: "Negative",
       subscapularis_tear: false,
@@ -81,6 +83,7 @@ export function SurgeryForm({ patientId, surgery }: { patientId: string; surgery
           </span>
           {errors.surgery_date && <span className="mt-2 block text-xs text-red-600">{errors.surgery_date.message}</span>}
         </label>
+        <Controller name="surgeon" control={control} render={({ field }) => <SelectionCards label="Surgeon" columns={3} options={[{ value: "蔣恩榮" }, { value: "陳昆暉" }, { value: "馬瑄孝" }]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value) }} selected={field.value ?? undefined} />} />
         <SelectionCards label="Side" options={[{ value: "Right" }, { value: "Left" }]} registration={registration("side")} selected={selected.side} error={errors.side} />
       </section>
 
