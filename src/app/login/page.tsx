@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Activity } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import brandIcon from "@/app/icon.png";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,7 +27,7 @@ export default function LoginPage() {
   return (
     <main className="grid min-h-screen place-items-center p-4">
       <section className="surface w-full max-w-md p-6 sm:p-10">
-        <span className="mb-6 grid size-12 place-items-center rounded-2xl bg-primary text-white"><Activity /></span>
+        <span className="mb-6 grid size-14 place-items-center overflow-hidden rounded-2xl border bg-white p-1.5 shadow-sm"><Image src={brandIcon} alt="OrthoRegistry shoulder icon" className="size-full object-contain" priority /></span>
         <p className="text-sm font-semibold text-primary">ORTHOPEDIC REGISTRY</p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight">Welcome back</h1>
         <p className="mt-2 text-sm text-muted">Sign in to securely access patient records.</p>

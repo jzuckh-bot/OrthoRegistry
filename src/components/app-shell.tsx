@@ -1,7 +1,9 @@
 import Link from "next/link";
-import { Activity, LayoutDashboard, Plus, Users } from "lucide-react";
+import Image from "next/image";
+import { LayoutDashboard, Plus, Users } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SignOutButton } from "@/components/sign-out-button";
+import brandIcon from "@/app/icon.png";
 
 const links = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -14,7 +16,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen">
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r bg-card/80 p-5 backdrop-blur-xl md:block">
         <Link href="/dashboard" className="mb-10 flex items-center gap-3 font-bold">
-          <span className="grid size-10 place-items-center rounded-2xl bg-primary text-white"><Activity /></span>
+          <span className="grid size-10 place-items-center overflow-hidden rounded-2xl border bg-white p-1 shadow-sm"><Image src={brandIcon} alt="" className="size-full object-contain" /></span>
           OrthoRegistry
         </Link>
         <nav className="space-y-2">
@@ -27,7 +29,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="absolute bottom-5 left-5 right-5 flex items-center justify-between"><SignOutButton /><ThemeToggle /></div>
       </aside>
       <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-xl md:hidden">
-        <Link href="/dashboard" className="flex items-center gap-2 font-bold"><Activity className="text-primary" />OrthoRegistry</Link>
+        <Link href="/dashboard" className="flex items-center gap-2 font-bold"><span className="grid size-9 place-items-center overflow-hidden rounded-xl border bg-white p-1"><Image src={brandIcon} alt="" className="size-full object-contain" /></span>OrthoRegistry</Link>
         <ThemeToggle />
       </header>
       <main className="mx-auto max-w-7xl p-4 pb-24 md:ml-64 md:p-8">{children}</main>
