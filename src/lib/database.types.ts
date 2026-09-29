@@ -24,8 +24,8 @@ export type SurgeryDiagnosis =
   | "Partial-thickness supraspinatus tear"
   | "Full-thickness supraspinatus tear"
   | "Massive rotator cuff tear";
-export type PatteGrade = 1 | 2 | 3;
-export type TangentSign = "Positive" | "Negative";
+export type PatteGrade = "1" | "2" | "3" | "N/A";
+export type TangentSign = "Positive" | "Negative" | "N/A";
 export type RepairType = "Single row" | "Double row" | "Partial repair";
 export type BicepsProcedure = "None" | "Tenotomy" | "Tenodesis";
 export type Surgeon = "蔣恩榮" | "陳昆暉" | "馬瑄孝";
@@ -47,6 +47,7 @@ export interface Surgery {
   biceps_lesion: boolean;
   red_tear: boolean | null;
   anterior_cable_tear: boolean | null;
+  revision_surgery: boolean | null;
   repair_type: RepairType;
   margin_convergence: boolean | null;
   graft_use: boolean | null;

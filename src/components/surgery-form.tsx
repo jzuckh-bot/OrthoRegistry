@@ -33,6 +33,7 @@ export function SurgeryForm({ patientId, surgery }: { patientId: string; surgery
       biceps_lesion: surgery.biceps_lesion,
       red_tear: surgery.red_tear ?? null,
       anterior_cable_tear: surgery.anterior_cable_tear ?? null,
+      revision_surgery: surgery.revision_surgery ?? null,
       repair_type: surgery.repair_type,
       margin_convergence: surgery.margin_convergence ?? null,
       graft_use: surgery.graft_use ?? null,
@@ -46,12 +47,13 @@ export function SurgeryForm({ patientId, surgery }: { patientId: string; surgery
       preop_imaging_source: null,
       preop_ultrasound_date: "",
       preop_mri_date: "",
-      patte_grade: 1,
+      patte_grade: "1",
       tangent_sign: "Negative",
       subscapularis_tear: false,
       biceps_lesion: false,
       red_tear: null,
       anterior_cable_tear: null,
+      revision_surgery: null,
       margin_convergence: null,
       graft_use: null,
       medialization: null,
@@ -109,12 +111,13 @@ export function SurgeryForm({ patientId, surgery }: { patientId: string; surgery
           { value: "Full-thickness supraspinatus tear", label: "Full-thickness", hint: "Supraspinatus tear" },
           { value: "Massive rotator cuff tear", label: "Massive tear", hint: "Rotator cuff" },
         ]} registration={registration("diagnosis")} selected={selected.diagnosis} error={errors.diagnosis} />
-        <SelectionCards label="Patte grade" columns={3} options={[{ value: 1 }, { value: 2 }, { value: 3 }]} registration={registration("patte_grade")} selected={Number(selected.patte_grade)} error={errors.patte_grade} />
-        <SelectionCards label="Tangent sign" options={[{ value: "Positive" }, { value: "Negative" }]} registration={registration("tangent_sign")} selected={selected.tangent_sign} error={errors.tangent_sign} />
+        <SelectionCards label="Patte grade" options={[{ value: "1" }, { value: "2" }, { value: "3" }, { value: "N/A" }]} registration={registration("patte_grade")} selected={selected.patte_grade} error={errors.patte_grade} />
+        <SelectionCards label="Tangent sign" columns={3} options={[{ value: "Positive" }, { value: "Negative" }, { value: "N/A" }]} registration={registration("tangent_sign")} selected={selected.tangent_sign} error={errors.tangent_sign} />
         <Controller name="subscapularis_tear" control={control} render={({ field }) => <SelectionCards label="Subscapularis tear" options={[{ value: "true", label: "Yes" }, { value: "false", label: "No" }]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value === "true") }} selected={String(field.value)} />} />
         <Controller name="biceps_lesion" control={control} render={({ field }) => <SelectionCards label="Biceps lesion" options={[{ value: "true", label: "Yes" }, { value: "false", label: "No" }]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value === "true") }} selected={String(field.value)} />} />
         <Controller name="red_tear" control={control} render={({ field }) => <SelectionCards label="Red tear" options={[{ value: "true", label: "Yes" }, { value: "false", label: "No" }]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value === "true") }} selected={field.value == null ? undefined : String(field.value)} />} />
         <Controller name="anterior_cable_tear" control={control} render={({ field }) => <SelectionCards label="Anterior cable tear" options={[{ value: "true", label: "Yes" }, { value: "false", label: "No" }]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value === "true") }} selected={field.value == null ? undefined : String(field.value)} />} />
+        <Controller name="revision_surgery" control={control} render={({ field }) => <SelectionCards label="Revision surgery" options={[{ value: "true", label: "Yes" }, { value: "false", label: "No" }]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value === "true") }} selected={field.value == null ? undefined : String(field.value)} />} />
       </section>
 
       <section className="surface space-y-7 p-5 sm:p-7">

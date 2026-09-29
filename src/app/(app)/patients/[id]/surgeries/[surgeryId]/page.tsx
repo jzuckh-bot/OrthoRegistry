@@ -31,6 +31,7 @@ export default async function SurgeryDetailPage({ params }: { params: Promise<{ 
     ["Biceps lesion", yesNo(surgery.biceps_lesion)],
     ...(surgery.red_tear == null ? [] : [["Red tear", yesNo(surgery.red_tear)]]),
     ...(surgery.anterior_cable_tear == null ? [] : [["Anterior cable tear", yesNo(surgery.anterior_cable_tear)]]),
+    ...(surgery.revision_surgery == null ? [] : [["Revision surgery", yesNo(surgery.revision_surgery)]]),
     ["Repair type", surgery.repair_type],
     ...(surgery.margin_convergence == null ? [] : [["Margin convergence", yesNo(surgery.margin_convergence)]]),
     ...(surgery.graft_use == null ? [] : [["Graft use", yesNo(surgery.graft_use)]]),
