@@ -86,6 +86,7 @@ export function SurgeryForm({ patientId, surgery }: { patientId: string; surgery
   return (
     <form onSubmit={handleSubmit(submit)} className="mt-6 space-y-4 pb-28">
       <section className="surface space-y-7 p-5 sm:p-7">
+        <Controller name="revision_surgery" control={control} render={({ field }) => <SelectionCards label="Surgery type" options={[{ value: "false", label: "Primary surgery" }, { value: "true", label: "Revision surgery" }]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value === "true") }} selected={field.value == null ? undefined : String(field.value)} />} />
         <label className="block text-sm font-semibold">Surgery date
           <span className="relative mt-3 block">
             <CalendarDays className="pointer-events-none absolute left-4 top-3.5 size-4 text-muted" />
@@ -117,7 +118,6 @@ export function SurgeryForm({ patientId, surgery }: { patientId: string; surgery
         <Controller name="biceps_lesion" control={control} render={({ field }) => <SelectionCards label="Biceps lesion" options={[{ value: "true", label: "Yes" }, { value: "false", label: "No" }]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value === "true") }} selected={String(field.value)} />} />
         <Controller name="red_tear" control={control} render={({ field }) => <SelectionCards label="Red tear" options={[{ value: "true", label: "Yes" }, { value: "false", label: "No" }]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value === "true") }} selected={field.value == null ? undefined : String(field.value)} />} />
         <Controller name="anterior_cable_tear" control={control} render={({ field }) => <SelectionCards label="Anterior cable tear" options={[{ value: "true", label: "Yes" }, { value: "false", label: "No" }]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value === "true") }} selected={field.value == null ? undefined : String(field.value)} />} />
-        <Controller name="revision_surgery" control={control} render={({ field }) => <SelectionCards label="Revision surgery" options={[{ value: "true", label: "Yes" }, { value: "false", label: "No" }]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value === "true") }} selected={field.value == null ? undefined : String(field.value)} />} />
       </section>
 
       <section className="surface space-y-7 p-5 sm:p-7">
