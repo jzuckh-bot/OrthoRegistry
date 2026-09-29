@@ -24,8 +24,19 @@ export const surgerySchema = z.object({
   graft_use: z.boolean().nullable(),
   medialization: z.boolean().nullable(),
   number_of_anchors: z.coerce.number().int("Use a whole number").min(0, "Cannot be negative").max(20, "Maximum is 20"),
+  medial_row_anchors: z.number().int().min(0).max(20).nullable(),
+  lateral_row_anchors: z.number().int().min(0).max(20).nullable(),
   biceps_procedure: z.enum(["None", "Tenotomy", "Tenodesis"]),
   operative_notes: z.string(),
+}).superRefine((values, context) => {
+  const medial = values.medial_row_anchors;
+  const lateral = values.lateral_row_anchors;
+  if ((medial === null) !== (lateral === null)) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: [medial === null ? "medial_row_anchors" : "lateral_row_anchors"], message: "Record both row counts (use 0 if none)" });
+  }
+  if (medial !== null && lateral !== null && medial + lateral > 20) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ["number_of_anchors"], message: "Maximum total is 20" });
+  }
 });
 
 export type SurgeryFormValues = z.infer<typeof surgerySchema>;

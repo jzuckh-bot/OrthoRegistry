@@ -37,6 +37,8 @@ export default async function SurgeryDetailPage({ params }: { params: Promise<{ 
     ...(surgery.graft_use == null ? [] : [["Graft use", yesNo(surgery.graft_use)]]),
     ...(surgery.medialization == null ? [] : [["Medialization", yesNo(surgery.medialization)]]),
     ["Number of anchors", surgery.number_of_anchors],
+    ...(surgery.medial_row_anchors == null ? [] : [["Medial row anchors (內排)", surgery.medial_row_anchors]]),
+    ...(surgery.lateral_row_anchors == null ? [] : [["Lateral row anchors (外排)", surgery.lateral_row_anchors]]),
     ["Biceps procedure", surgery.biceps_procedure],
     ...(surgery.operative_notes ? [["Operative notes", surgery.operative_notes]] : []),
   ];

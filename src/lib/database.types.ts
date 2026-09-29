@@ -53,6 +53,8 @@ export interface Surgery {
   graft_use: boolean | null;
   medialization: boolean | null;
   number_of_anchors: number;
+  medial_row_anchors: number | null;
+  lateral_row_anchors: number | null;
   biceps_procedure: BicepsProcedure;
   operative_notes: string | null;
   created_at: string;

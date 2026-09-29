@@ -39,6 +39,8 @@ export function SurgeryForm({ patientId, surgery }: { patientId: string; surgery
       graft_use: surgery.graft_use ?? null,
       medialization: surgery.medialization ?? null,
       number_of_anchors: surgery.number_of_anchors,
+      medial_row_anchors: surgery.medial_row_anchors ?? null,
+      lateral_row_anchors: surgery.lateral_row_anchors ?? null,
       biceps_procedure: surgery.biceps_procedure,
       operative_notes: surgery.operative_notes ?? "",
     } : {
@@ -58,6 +60,8 @@ export function SurgeryForm({ patientId, surgery }: { patientId: string; surgery
       graft_use: null,
       medialization: null,
       number_of_anchors: 0,
+      medial_row_anchors: 0,
+      lateral_row_anchors: 0,
       biceps_procedure: "None",
       operative_notes: "",
     },
@@ -68,6 +72,9 @@ export function SurgeryForm({ patientId, surgery }: { patientId: string; surgery
     const supabase = createClient();
     const payload = {
       ...values,
+      number_of_anchors: values.medial_row_anchors !== null && values.lateral_row_anchors !== null
+        ? values.medial_row_anchors + values.lateral_row_anchors
+        : values.number_of_anchors,
       preop_ultrasound_date: values.preop_imaging_source === "Ultrasound" ? values.preop_ultrasound_date || null : null,
       preop_mri_date: values.preop_imaging_source === "MRI" ? values.preop_mri_date || null : null,
       operative_notes: values.operative_notes.trim() || null,
@@ -128,11 +135,31 @@ export function SurgeryForm({ patientId, surgery }: { patientId: string; surgery
         <Controller name="medialization" control={control} render={({ field }) => <SelectionCards label="Medialization" options={[{ value: "true", label: "Yes" }, { value: "false", label: "No" }]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value === "true") }} selected={field.value == null ? undefined : String(field.value)} />} />
         <div>
           <p className="text-sm font-semibold">Number of anchors</p>
-          <div className="mt-3 flex items-center justify-between rounded-2xl border bg-card p-2">
-            <Button type="button" variant="ghost" className="size-12 rounded-xl p-0" aria-label="Remove anchor" onClick={() => setValue("number_of_anchors", Math.max(0, Number(selected.number_of_anchors) - 1), { shouldValidate: true })}><Minus /></Button>
-            <div className="text-center"><span className="text-3xl font-bold tabular-nums">{selected.number_of_anchors}</span><p className="text-xs text-muted">anchors</p></div>
-            <Button type="button" variant="ghost" className="size-12 rounded-xl p-0" aria-label="Add anchor" onClick={() => setValue("number_of_anchors", Math.min(20, Number(selected.number_of_anchors) + 1), { shouldValidate: true })}><Plus /></Button>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {([
+              { name: "medial_row_anchors", label: "Medial row (內排)" },
+              { name: "lateral_row_anchors", label: "Lateral row (外排)" },
+            ] as const).map(({ name, label }) => (
+              <Controller key={name} name={name} control={control} render={({ field }) => (
+                <fieldset className="rounded-2xl border bg-card p-2">
+                  <legend className="px-2 text-sm font-semibold">{label}</legend>
+                  <div className="flex items-center justify-between gap-2">
+                    <Button type="button" variant="ghost" className="size-12 shrink-0 rounded-xl p-0" aria-label={`Decrease ${label} anchors`} disabled={field.value === 0} onClick={() => field.onChange(Math.max(0, (field.value ?? 1) - 1))}><Minus /></Button>
+                    <output className="text-center text-2xl font-bold tabular-nums" aria-live="polite">{field.value ?? "—"}</output>
+                    <Button type="button" variant="ghost" className="size-12 shrink-0 rounded-xl p-0" aria-label={`Increase ${label} anchors`} disabled={(selected.medial_row_anchors ?? 0) + (selected.lateral_row_anchors ?? 0) >= 20} onClick={() => field.onChange(Math.min(20, (field.value ?? 0) + 1))}><Plus /></Button>
+                  </div>
+                  {field.value === null && <button type="button" className="w-full min-h-11 text-sm font-semibold text-primary" onClick={() => field.onChange(0)}>Record 0</button>}
+                  {errors[name] && <p role="alert" className="p-2 text-xs text-red-600">{errors[name]?.message}</p>}
+                </fieldset>
+              )} />
+            ))}
           </div>
+          <p className="mt-3 text-sm font-semibold" aria-live="polite">
+            {selected.medial_row_anchors !== null && selected.lateral_row_anchors !== null
+              ? `Total anchors: ${selected.medial_row_anchors + selected.lateral_row_anchors}`
+              : `Previously recorded total: ${selected.number_of_anchors}`}
+          </p>
+          {(selected.medial_row_anchors === null || selected.lateral_row_anchors === null) && <p className="mt-1 text-xs text-muted">Row counts were not recorded. To update the breakdown, record both rows; use 0 if none.</p>}
           <input type="hidden" {...register("number_of_anchors")} />
           {errors.number_of_anchors && <p className="mt-2 text-xs text-red-600">{errors.number_of_anchors.message}</p>}
         </div>
