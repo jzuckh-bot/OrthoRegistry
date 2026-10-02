@@ -29,8 +29,14 @@ export function SurgeryForm({ patientId, surgery }: { patientId: string; surgery
       diagnosis: surgery.diagnosis,
       patte_grade: surgery.patte_grade,
       tangent_sign: surgery.tangent_sign,
-      subscapularis_tear: surgery.subscapularis_tear,
-      biceps_lesion: surgery.biceps_lesion,
+      acromioplasty: surgery.acromioplasty ?? null,
+      subscapularis_tear_type: surgery.subscapularis_tear_type ?? null,
+      subscapularis_treatment: surgery.subscapularis_treatment ?? null,
+      tenodesis_location: surgery.tenodesis_location ?? null,
+      tear_pattern: surgery.tear_pattern ?? null,
+      footprint_coverage: surgery.footprint_coverage ?? null,
+      superior_capsule_reconstruction: surgery.superior_capsule_reconstruction ?? null,
+      tendon_transfer: surgery.tendon_transfer ?? null,
       red_tear: surgery.red_tear ?? null,
       anterior_cable_tear: surgery.anterior_cable_tear ?? null,
       revision_surgery: surgery.revision_surgery ?? null,
@@ -51,8 +57,14 @@ export function SurgeryForm({ patientId, surgery }: { patientId: string; surgery
       preop_mri_date: "",
       patte_grade: "1",
       tangent_sign: "Negative",
-      subscapularis_tear: false,
-      biceps_lesion: false,
+      acromioplasty: null,
+      subscapularis_tear_type: null,
+      subscapularis_treatment: null,
+      tenodesis_location: null,
+      tear_pattern: null,
+      footprint_coverage: null,
+      superior_capsule_reconstruction: null,
+      tendon_transfer: null,
       red_tear: null,
       anterior_cable_tear: null,
       revision_surgery: null,
@@ -72,6 +84,7 @@ export function SurgeryForm({ patientId, surgery }: { patientId: string; surgery
     const supabase = createClient();
     const payload = {
       ...values,
+      tenodesis_location: values.biceps_procedure === "Tenodesis" ? values.tenodesis_location : null,
       number_of_anchors: values.medial_row_anchors !== null && values.lateral_row_anchors !== null
         ? values.medial_row_anchors + values.lateral_row_anchors
         : values.number_of_anchors,
@@ -81,7 +94,7 @@ export function SurgeryForm({ patientId, surgery }: { patientId: string; surgery
     };
     const result = surgery
       ? await supabase.from("surgeries").update(payload).eq("id", surgery.id)
-      : await supabase.from("surgeries").insert({ ...payload, patient_id: patientId });
+      : await supabase.from("surgeries").insert({ ...payload, patient_id: patientId, subscapularis_tear: null, biceps_lesion: null });
     if (result.error) return setServerError(result.error.message);
     router.push(`/patients/${patientId}`);
     router.refresh();
@@ -121,14 +134,21 @@ export function SurgeryForm({ patientId, surgery }: { patientId: string; surgery
         ]} registration={registration("diagnosis")} selected={selected.diagnosis} error={errors.diagnosis} />
         <SelectionCards label="Patte grade" options={[{ value: "1" }, { value: "2" }, { value: "3" }, { value: "N/A" }]} registration={registration("patte_grade")} selected={selected.patte_grade} error={errors.patte_grade} />
         <SelectionCards label="Tangent sign" columns={3} options={[{ value: "Positive" }, { value: "Negative" }, { value: "N/A" }]} registration={registration("tangent_sign")} selected={selected.tangent_sign} error={errors.tangent_sign} />
-        <Controller name="subscapularis_tear" control={control} render={({ field }) => <SelectionCards label="Subscapularis tear" options={[{ value: "true", label: "Yes" }, { value: "false", label: "No" }]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value === "true") }} selected={String(field.value)} />} />
-        <Controller name="biceps_lesion" control={control} render={({ field }) => <SelectionCards label="Biceps lesion" options={[{ value: "true", label: "Yes" }, { value: "false", label: "No" }]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value === "true") }} selected={String(field.value)} />} />
         <Controller name="red_tear" control={control} render={({ field }) => <SelectionCards label="Red tear" options={[{ value: "true", label: "Yes" }, { value: "false", label: "No" }]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value === "true") }} selected={field.value == null ? undefined : String(field.value)} />} />
         <Controller name="anterior_cable_tear" control={control} render={({ field }) => <SelectionCards label="Anterior cable tear" options={[{ value: "true", label: "Yes" }, { value: "false", label: "No" }]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value === "true") }} selected={field.value == null ? undefined : String(field.value)} />} />
       </section>
 
       <section className="surface space-y-7 p-5 sm:p-7">
         <h2 className="text-lg font-bold">Repair</h2>
+        <Controller name="acromioplasty" control={control} render={({ field }) => <SelectionCards label="Acromioplasty" options={[{"value":"true","label":"Yes"},{"value":"false","label":"No"}]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value === "true") }} selected={field.value == null ? undefined : String(field.value)} error={errors.acromioplasty} />} />
+        <Controller name="subscapularis_tear_type" control={control} render={({ field }) => <SelectionCards label="Subscapularis tear type" options={[{"value":"None"},{"value":"Partial"},{"value":"Full thickness with retraction (comma sign +)"}]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value) }} selected={field.value ?? undefined} error={errors.subscapularis_tear_type} />} />
+        <Controller name="subscapularis_treatment" control={control} render={({ field }) => <SelectionCards label="Subscapularis treatment" options={[{"value":"None"},{"value":"Debridement"},{"value":"Repair"}]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value) }} selected={field.value ?? undefined} error={errors.subscapularis_treatment} />} />
+        <SelectionCards label="Biceps procedure" options={[{ value: "None" }, { value: "Tenotomy" }, { value: "Tenodesis" }, { value: "Transposition" }]} registration={registration("biceps_procedure")} selected={selected.biceps_procedure} error={errors.biceps_procedure} />
+        {selected.biceps_procedure === "Tenodesis" && <Controller name="tenodesis_location" control={control} render={({ field }) => <SelectionCards label="Tenodesis location" options={[{"value":"Subpectoral"},{"value":"Suprapectoral"}]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value) }} selected={field.value ?? undefined} error={errors.tenodesis_location} />} />}
+        <Controller name="tear_pattern" control={control} render={({ field }) => <SelectionCards label="Tear pattern" options={[{"value":"U shape"},{"value":"L shape"}]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value) }} selected={field.value ?? undefined} error={errors.tear_pattern} />} />
+        <Controller name="footprint_coverage" control={control} render={({ field }) => <SelectionCards label="Footprint coverage" options={[{"value":"Direct repair"},{"value":"Incomplete footprint coverage"},{"value":"Partial repair"}]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value) }} selected={field.value ?? undefined} error={errors.footprint_coverage} />} />
+        <Controller name="superior_capsule_reconstruction" control={control} render={({ field }) => <SelectionCards label="Superior capsule reconstruction" options={[{"value":"true","label":"Yes"},{"value":"false","label":"No"}]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value === "true") }} selected={field.value == null ? undefined : String(field.value)} error={errors.superior_capsule_reconstruction} />} />
+        <Controller name="tendon_transfer" control={control} render={({ field }) => <SelectionCards label="Tendon transfer" options={[{"value":"None"},{"value":"LTT"},{"value":"LD"}]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value) }} selected={field.value ?? undefined} error={errors.tendon_transfer} />} />
         <SelectionCards label="Repair type" options={[{ value: "Single row" }, { value: "Double row" }, { value: "Partial repair" }]} registration={registration("repair_type")} selected={selected.repair_type} error={errors.repair_type} />
         <Controller name="margin_convergence" control={control} render={({ field }) => <SelectionCards label="Margin convergence" options={[{ value: "true", label: "Yes" }, { value: "false", label: "No" }]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value === "true") }} selected={field.value == null ? undefined : String(field.value)} />} />
         <Controller name="graft_use" control={control} render={({ field }) => <SelectionCards label="Graft use" options={[{ value: "true", label: "Yes" }, { value: "false", label: "No" }]} registration={{ name: field.name, onBlur: field.onBlur, ref: field.ref, onChange: e => field.onChange(e.target.value === "true") }} selected={field.value == null ? undefined : String(field.value)} />} />
@@ -163,7 +183,6 @@ export function SurgeryForm({ patientId, surgery }: { patientId: string; surgery
           <input type="hidden" {...register("number_of_anchors")} />
           {errors.number_of_anchors && <p className="mt-2 text-xs text-red-600">{errors.number_of_anchors.message}</p>}
         </div>
-        <SelectionCards label="Biceps procedure" columns={3} options={[{ value: "None" }, { value: "Tenotomy" }, { value: "Tenodesis" }]} registration={registration("biceps_procedure")} selected={selected.biceps_procedure} error={errors.biceps_procedure} />
         <label className="block text-sm font-semibold">
           Operative notes
           <textarea

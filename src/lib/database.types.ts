@@ -27,7 +27,7 @@ export type SurgeryDiagnosis =
 export type PatteGrade = "1" | "2" | "3" | "N/A";
 export type TangentSign = "Positive" | "Negative" | "N/A";
 export type RepairType = "Single row" | "Double row" | "Partial repair";
-export type BicepsProcedure = "None" | "Tenotomy" | "Tenodesis";
+export type BicepsProcedure = "None" | "Tenotomy" | "Tenodesis" | "Transposition";
 export type Surgeon = "蔣恩榮" | "陳昆暉" | "馬瑄孝";
 export type PreopImagingSource = "Ultrasound" | "MRI" | "Cloud imaging";
 
@@ -43,8 +43,16 @@ export interface Surgery {
   diagnosis: SurgeryDiagnosis;
   patte_grade: PatteGrade;
   tangent_sign: TangentSign;
-  subscapularis_tear: boolean;
-  biceps_lesion: boolean;
+  subscapularis_tear: boolean | null;
+  biceps_lesion: boolean | null;
+  acromioplasty: boolean | null;
+  subscapularis_tear_type: "None" | "Partial" | "Full thickness with retraction (comma sign +)" | null;
+  subscapularis_treatment: "None" | "Debridement" | "Repair" | null;
+  tenodesis_location: "Subpectoral" | "Suprapectoral" | null;
+  tear_pattern: "U shape" | "L shape" | null;
+  footprint_coverage: "Direct repair" | "Incomplete footprint coverage" | "Partial repair" | null;
+  superior_capsule_reconstruction: boolean | null;
+  tendon_transfer: "None" | "LTT" | "LD" | null;
   red_tear: boolean | null;
   anterior_cable_tear: boolean | null;
   revision_surgery: boolean | null;
