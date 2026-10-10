@@ -38,6 +38,7 @@ export function CohortSearch() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const activeRequest = useRef<AbortController | null>(null);
+  const filterPanel = useRef<HTMLDivElement | null>(null);
   useEffect(() => () => activeRequest.current?.abort(), []);
   const dirty = JSON.stringify(draft) !== JSON.stringify(applied.filters);
   const busy = loading || exporting;
@@ -60,7 +61,13 @@ export function CohortSearch() {
   }
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    void search({ ...initialRequest, filters: draft });
+    // Read the visible controls, including committed native date inputs and
+    // autofilled values, rather than relying on change-event timing alone.
+    const filters = Object.fromEntries(Array.from(new FormData(event.currentTarget).entries())
+      .filter((entry): entry is [string, string] => typeof entry[1] === "string" && entry[1].trim() !== "")
+      .map(([key, value]) => [key, value.trim()]));
+    setDraft(filters);
+    void search({ ...initialRequest, filters });
   }
   function clear() {
     setDraft({});
@@ -96,18 +103,24 @@ export function CohortSearch() {
       <div className="flex items-center gap-3"><SlidersHorizontal className="size-5 text-primary" /><h2 id="cohort-title" className="text-xl font-bold">Cohort Search</h2></div>
       <p className="mt-2 text-sm text-muted">Search the shared registry. All selected conditions must match the same surgery. One result per surgery; patients without surgery records are not included.</p>
       <form onSubmit={submit} className="mt-5">
-        <div className="space-y-3">
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <p className="text-sm text-muted">{FILTERS.length} filter inputs across {GROUPS.length} sections. Expand a section to choose conditions.</p>
+          <Button type="button" variant="secondary" onClick={() => filterPanel.current?.querySelectorAll("details").forEach(section => { section.open = true; })}>Expand all filters</Button>
+          <Button type="button" variant="secondary" onClick={() => filterPanel.current?.querySelectorAll("details").forEach(section => { section.open = false; })}>Collapse all filters</Button>
+        </div>
+        <div ref={filterPanel} className="space-y-3">
           {GROUPS.map(group => (
             <details key={group} className="rounded-2xl border bg-card">
               <summary className="min-h-12 cursor-pointer px-4 py-3 font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">
-                {group}<span className="ml-2 text-xs font-normal text-muted">{FILTERS.filter(f => f.group === group && draft[f.key]).length || "No"} filters</span>
+                {group}<span className="ml-2 text-xs font-normal text-muted">{FILTERS.filter(f => f.group === group && draft[f.key]?.trim()).length} selected / {FILTERS.filter(f => f.group === group).length} available</span>
+                <span className="mt-1 block text-xs font-normal text-muted">{FILTERS.filter(f => f.group === group).map(f => f.label).join(" · ")}</span>
               </summary>
               <div className="grid gap-4 border-t p-4 sm:grid-cols-2 xl:grid-cols-3">
                 {FILTERS.filter(f => f.group === group).map(def => (
-                  <label key={def.key} className="block text-sm font-medium">
+                  <label key={def.key} htmlFor={`cohort-${def.key}`} className="block text-sm font-medium">
                     {def.label}
                     {def.kind === "select" ? (
-                      <select className="field mt-2 min-h-12 text-base" value={draft[def.key] ?? ""} disabled={busy || (def.key === "tenodesis_location" && Boolean(draft.biceps_procedure) && draft.biceps_procedure !== "Tenodesis")}
+                      <select id={`cohort-${def.key}`} name={def.key} aria-label={def.label} className="field mt-2 min-h-12 text-base" value={draft[def.key] ?? ""} disabled={busy || (def.key === "tenodesis_location" && Boolean(draft.biceps_procedure) && draft.biceps_procedure !== "Tenodesis")}
                         onChange={event => setDraft(current => {
                           const next = { ...current, [def.key]: event.target.value };
                           if (def.key === "biceps_procedure" && event.target.value && event.target.value !== "Tenodesis") delete next.tenodesis_location;
@@ -118,7 +131,7 @@ export function CohortSearch() {
                         <option value={NULL_VALUE}>{def.key === "diabetes_mellitus" || def.key === "smoking_status" ? "Unknown / Not recorded" : "Not recorded"}</option>
                       </select>
                     ) : (
-                      <input className="field mt-2 min-h-12 text-base" type={def.kind === "age" ? "number" : def.kind === "date" ? "date" : "text"}
+                      <input id={`cohort-${def.key}`} name={def.key} className="field mt-2 min-h-12 text-base" type={def.kind === "age" ? "number" : def.kind === "date" ? "date" : "text"}
                         min={def.kind === "age" ? 0 : undefined} max={def.kind === "age" ? 150 : undefined} step={def.kind === "age" ? 1 : undefined}
                         maxLength={def.kind === "text" ? 200 : undefined} placeholder={def.kind === "text" ? "Contains…" : "Any"}
                         value={draft[def.key] ?? ""} disabled={busy} onChange={event => setDraft(current => ({ ...current, [def.key]: event.target.value }))} />

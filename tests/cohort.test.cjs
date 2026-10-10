@@ -23,7 +23,7 @@ const surgeries = [
 
 // The real Supabase client builds the requests; a deterministic PostgREST-shaped
 // test transport evaluates fixture rows. This is NOT a live DB/RLS verification.
-function fixtureClient(records = surgeries, cap = 1000) {
+function fixtureClient(records = surgeries, cap = 1000, patientRecords = patients) {
   const calls = [];
   const client = createClient('https://cohort-fixture.invalid', 'test-publishable-key', {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -50,8 +50,8 @@ function fixtureClient(records = surgeries, cap = 1000) {
         });
       }
       let matching = isPatientRoot
-        ? patients.filter(p => records.some(s => s.patient_id === p.id && matches(s, p)))
-        : records.flatMap(s => { const p = patients.find(p => p.id === s.patient_id); return p && matches(s, p) ? [{ ...s, patient: p }] : []; });
+        ? patientRecords.filter(p => records.some(s => s.patient_id === p.id && matches(s, p)))
+        : records.flatMap(s => { const p = patientRecords.find(p => p.id === s.patient_id); return p && matches(s, p) ? [{ ...s, patient: p }] : []; });
       const count = matching.length;
       const offset = Number(url.searchParams.get('offset') || 0);
       const limit = Math.min(cap, Number(url.searchParams.get('limit') || cap));
@@ -180,4 +180,126 @@ test('result pagination defaults to 50 without downloading all matches', async (
 test('empty exports fail clearly rather than producing a misleading file', async () => {
   const { client } = fixtureClient();
   await assert.rejects(createCohortWorkbook(allCohortRows(client, request({ name: 'absent' }), asOf), asOf), /No matching/);
+});
+
+// Independent acceptance contract: deleting a definition or an enum option must
+// fail coverage, not silently remove its test from a FILTERS-driven loop.
+const selectionContract = {
+  sex: ['patient', ['Male', 'Female', 'Other']],
+  diabetes_mellitus: ['patient', ['Yes', 'No']],
+  smoking_status: ['patient', ['Never', 'Former', 'Current']],
+  side: ['surgery', ['Right', 'Left']],
+  surgeon: ['surgery', ['蔣恩榮', '陳昆暉', '馬瑄孝']],
+  revision_surgery: ['surgery', ['true', 'false']],
+  patte_grade: ['surgery', ['1', '2', '3', 'N/A']],
+  tangent_sign: ['surgery', ['Positive', 'Negative', 'N/A']],
+  red_tear: ['surgery', ['true', 'false']],
+  anterior_cable_tear: ['surgery', ['true', 'false']],
+  acromioplasty: ['surgery', ['true', 'false']],
+  subscapularis_tear_type: ['surgery', ['None', 'Partial', 'Full thickness with retraction (comma sign +)']],
+  subscapularis_treatment: ['surgery', ['None', 'Debridement', 'Repair']],
+  biceps_procedure: ['surgery', ['None', 'Tenotomy', 'Tenodesis', 'Transposition']],
+  tenodesis_location: ['surgery', ['Subpectoral', 'Suprapectoral']],
+  tear_pattern: ['surgery', ['U shape', 'L shape']],
+  footprint_coverage: ['surgery', ['Direct repair', 'Incomplete footprint coverage', 'Partial repair']],
+  repair_type: ['surgery', ['Single row', 'Double row', 'Partial repair']],
+  margin_convergence: ['surgery', ['true', 'false']],
+  graft_use: ['surgery', ['true', 'false']],
+  medialization: ['surgery', ['true', 'false']],
+  superior_capsule_reconstruction: ['surgery', ['true', 'false']],
+  tendon_transfer: ['surgery', ['None', 'LTT', 'LD']],
+  preop_imaging_source: ['surgery', ['Ultrasound', 'MRI', 'Cloud imaging']],
+};
+const nonSelectKeys = ['name', 'mrn', 'age_min', 'age_max', 'surgery_date_from', 'surgery_date_to',
+  'preop_ultrasound_date_from', 'preop_ultrasound_date_to', 'preop_mri_date_from', 'preop_mri_date_to'];
+const dbValue = value => value === '__null' ? null : value === 'true' ? true : value === 'false' ? false : value;
+
+test('all 34 requested inputs and exact schema values are registered', () => {
+  assert.deepEqual(FILTERS.map(f => f.key).sort(), [...Object.keys(selectionContract), ...nonSelectKeys].sort());
+  assert.equal(new Set(FILTERS.map(f => f.key)).size, 34);
+  for (const [key, [scope, options]] of Object.entries(selectionContract)) {
+    const def = FILTERS.find(f => f.key === key);
+    assert.equal(def.scope, scope);
+    assert.deepEqual(def.options, options);
+  }
+});
+
+for (const [key, [scope, options]] of Object.entries(selectionContract)) {
+  for (const value of [...options, '__null', '']) {
+    test(`acceptance ${key}=${value || 'Any'}: matching rows, counts and export query`, async () => {
+      const values = [...options, '__null'];
+      const people = values.map((v, i) => ({ ...patients[0], id: `p${i}`, ...(scope === 'patient' ? { [key]: dbValue(v) } : {}) }));
+      const records = values.map((v, i) => surgery(`s${i}`, `p${i}`, {
+        ...(key === 'tenodesis_location' ? { biceps_procedure: 'Tenodesis' } : {}),
+        ...(scope === 'surgery' ? { [key]: dbValue(v) } : {}),
+      }));
+      const { client, calls } = fixtureClient(records, 1000, people);
+      const query = request({ [key]: value });
+      const expected = value ? [`s${values.indexOf(value)}`] : records.map(r => r.id);
+      const result = await searchCohort(client, query, asOf);
+      assert.deepEqual(result.rows.map(r => r.id), expected);
+      assert.equal(result.surgeries, expected.length);
+      assert.equal(result.patients, expected.length);
+      const surgeryFilter = `${scope === 'patient' ? 'patient.' : ''}${key}`;
+      const patientFilter = `${scope === 'surgery' ? 'matching.' : ''}${key}`;
+      const expression = value === '__null' ? 'is.null' : `eq.${value}`;
+      assert.equal(calls[0].searchParams.get(surgeryFilter), value ? expression : null);
+      assert.equal(calls[1].searchParams.get(patientFilter), value ? expression : null);
+      const exported = [];
+      for await (const row of allCohortRows(client, query, asOf)) exported.push(row.id);
+      assert.deepEqual(exported, expected);
+    });
+  }
+}
+
+for (const [key, value, expected] of [
+  ['name', 'aLpH', ['s001', 's002']], ['mrn', '045', ['s003']],
+  ['age_min', '66', ['s003']], ['age_max', '45', ['s001', 's002']],
+]) {
+  test(`acceptance ${key}: partial text or independent age bound`, async () => {
+    const { client } = fixtureClient();
+    const result = await searchCohort(client, request({ [key]: value }), asOf);
+    assert.deepEqual(result.rows.map(r => r.id), expected);
+  });
+}
+
+for (const column of ['surgery_date', 'preop_ultrasound_date', 'preop_mri_date']) {
+  for (const [suffix, expected] of [['from', ['on', 'after']], ['to', ['before', 'on']]]) {
+    test(`acceptance ${column}_${suffix}: inclusive date bound excludes missing values`, async () => {
+      const records = [['before', '2026-09-30'], ['on', '2026-10-01'], ['after', '2026-10-02'], ['missing', null]]
+        .map(([id, date]) => surgery(id, 'p1', { [column]: date }));
+      const { client } = fixtureClient(records);
+      const result = await searchCohort(client, request({ [`${column}_${suffix}`]: '2026-10-01' }), asOf);
+      assert.deepEqual(result.rows.map(r => r.id), expected);
+    });
+  }
+  test(`acceptance ${column}: combined range and invalid range`, async () => {
+    const records = ['2026-09-30', '2026-10-01', '2026-10-02'].map((date, i) => surgery(`s${i}`, 'p1', { [column]: date }));
+    const { client } = fixtureClient(records);
+    const result = await searchCohort(client, request({ [`${column}_from`]: '2026-10-01', [`${column}_to`]: '2026-10-01' }), asOf);
+    assert.deepEqual(result.rows.map(r => r.id), ['s1']);
+    assert.equal(cohortRequestSchema.safeParse({ filters: { [`${column}_from`]: '2026-10-02', [`${column}_to`]: '2026-10-01' } }).success, false);
+  });
+}
+
+test('all clinical selection filters combine with AND; any individual mismatch is excluded', async () => {
+  const filters = Object.fromEntries(Object.entries(selectionContract).map(([key, [, values]]) => [key, key === 'biceps_procedure' ? 'Tenodesis' : values[0]]));
+  const basePatient = { ...patients[0] };
+  const baseSurgery = surgery('match', 'match');
+  for (const [key, [scope]] of Object.entries(selectionContract)) (scope === 'patient' ? basePatient : baseSurgery)[key] = dbValue(filters[key]);
+  const people = [{ ...basePatient, id: 'match' }];
+  const records = [baseSurgery];
+  for (const [key, [scope, options]] of Object.entries(selectionContract)) {
+    const p = { ...basePatient, id: key };
+    const s = { ...baseSurgery, id: key, patient_id: key };
+    (scope === 'patient' ? p : s)[key] = dbValue(options.find(v => v !== filters[key]));
+    people.push(p); records.push(s);
+  }
+  const { client } = fixtureClient(records, 1000, people);
+  const result = await searchCohort(client, request(filters), asOf);
+  assert.deepEqual(result.rows.map(r => r.id), ['match']);
+  assert.equal(result.patients, 1);
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(await createCohortWorkbook(allCohortRows(client, request(filters), asOf), asOf));
+  assert.equal(workbook.getWorksheet('Cohort').rowCount, 2);
 });
