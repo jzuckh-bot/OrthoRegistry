@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Plus, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import type { Patient } from "@/lib/database.types";
+import { CohortSearch } from "@/components/cohort-search";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -24,6 +25,7 @@ export default async function DashboardPage() {
           <p className="mt-8 text-xl font-bold">Add a patient</p><p className="mt-1 text-sm text-muted">Create a new registry record</p>
         </Link>
       </div>
+      <CohortSearch />
       <section className="surface mt-6 overflow-hidden">
         <div className="border-b p-5"><h2 className="font-semibold">Recently added</h2></div>
         <div className="divide-y">
