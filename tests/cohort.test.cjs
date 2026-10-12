@@ -42,9 +42,9 @@ function fixtureClient(records = surgeries, cap = 1000, patientRecords = patient
           if (op === 'is') return actual == null;
           if (actual == null) return false;
           if (op === 'eq') return String(actual) === expected;
-          if (op === 'gte') return String(actual) >= expected;
-          if (op === 'lte') return String(actual) <= expected;
-          if (op === 'gt') return String(actual) > expected;
+          if (op === 'gte') return typeof actual === 'number' ? actual >= Number(expected) : String(actual) >= expected;
+          if (op === 'lte') return typeof actual === 'number' ? actual <= Number(expected) : String(actual) <= expected;
+          if (op === 'gt') return typeof actual === 'number' ? actual > Number(expected) : String(actual) > expected;
           if (op === 'ilike') return String(actual).toLowerCase().includes(expected.slice(1, -1).toLowerCase());
           throw new Error(`Unexpected test predicate ${op}`);
         });
@@ -151,9 +151,9 @@ test('Excel includes only matching rows across all pages and a lower API cap', a
   await workbook.xlsx.load(bytes);
   const sheet = workbook.getWorksheet('Cohort');
   assert.equal(sheet.rowCount, 121);
-  assert.equal(sheet.getCell('A2').value, 'Synthetic Alpha');
-  assert.equal(sheet.getCell('B2').value, '000123');
-  assert.equal(sheet.getCell('D2').value, '1980-10-09');
+  assert.equal(sheet.getRow(2).getCell(EXPORT_COLUMNS.findIndex(c => c.header === 'Patient name') + 1).value, 'Synthetic Alpha');
+  assert.equal(sheet.getRow(2).getCell(EXPORT_COLUMNS.findIndex(c => c.header === 'MRN') + 1).value, '000123');
+  assert.equal(sheet.getRow(2).getCell(EXPORT_COLUMNS.findIndex(c => c.header === 'Date of birth') + 1).value, '1980-10-09');
   assert.equal(sheet.getRow(1).font.bold, true);
   assert.equal(sheet.views[0].ySplit, 1);
   assert.ok(sheet.autoFilter);
@@ -161,8 +161,8 @@ test('Excel includes only matching rows across all pages and a lower API cap', a
   const cell = sheet.getRow(2).getCell(notes);
   assert.equal(cell.value, '=SUM(1,2)');
   assert.equal(cell.type, ExcelJS.ValueType.String);
-  const revision = EXPORT_COLUMNS.findIndex(c => c.header === 'Revision surgery') + 1;
-  assert.equal(sheet.getRow(2).getCell(revision).value, 'No');
+  const revision = EXPORT_COLUMNS.findIndex(c => c.header === 'Primary / Revision') + 1;
+  assert.equal(sheet.getRow(2).getCell(revision).value, 'Primary');
   const acromioplasty = EXPORT_COLUMNS.findIndex(c => c.header === 'Acromioplasty') + 1;
   assert.equal(sheet.getRow(2).getCell(acromioplasty).value, 'Not recorded');
 });
@@ -185,6 +185,7 @@ test('empty exports fail clearly rather than producing a misleading file', async
 // Independent acceptance contract: deleting a definition or an enum option must
 // fail coverage, not silently remove its test from a FILTERS-driven loop.
 const selectionContract = {
+  diagnosis: ['surgery', ['Partial-thickness supraspinatus tear', 'Full-thickness supraspinatus tear', 'Massive rotator cuff tear']],
   sex: ['patient', ['Male', 'Female', 'Other']],
   diabetes_mellitus: ['patient', ['Yes', 'No']],
   smoking_status: ['patient', ['Never', 'Former', 'Current']],
@@ -211,12 +212,47 @@ const selectionContract = {
   preop_imaging_source: ['surgery', ['Ultrasound', 'MRI', 'Cloud imaging']],
 };
 const nonSelectKeys = ['name', 'mrn', 'age_min', 'age_max', 'surgery_date_from', 'surgery_date_to',
-  'preop_ultrasound_date_from', 'preop_ultrasound_date_to', 'preop_mri_date_from', 'preop_mri_date_to'];
+  'preop_ultrasound_date_from', 'preop_ultrasound_date_to', 'preop_mri_date_from', 'preop_mri_date_to', 'number_of_anchors', 'anchors_min', 'anchors_max'];
 const dbValue = value => value === '__null' ? null : value === 'true' ? true : value === 'false' ? false : value;
 
-test('all 34 requested inputs and exact schema values are registered', () => {
+test('exact clinical grouping and order', () => {
+  const { GROUPS } = require('../src/lib/cohort/filters.ts');
+  assert.deepEqual(GROUPS, ['Surgeon', 'Patient', 'Imaging / Preop', 'Tear pattern', 'Subscapularis', 'Biceps', 'Repair']);
+  const expected = {
+    Surgeon: ['surgeon'],
+    Patient: ['name','mrn','age_min','age_max','sex','diabetes_mellitus','smoking_status','side'],
+    'Imaging / Preop': ['revision_surgery','patte_grade','tangent_sign','preop_imaging_source','preop_ultrasound_date_from','preop_ultrasound_date_to','preop_mri_date_from','preop_mri_date_to','surgery_date_from','surgery_date_to'],
+    'Tear pattern': ['diagnosis','tear_pattern','red_tear','anterior_cable_tear'],
+    Subscapularis: ['subscapularis_tear_type','subscapularis_treatment'],
+    Biceps: ['biceps_procedure','tenodesis_location'],
+    Repair: ['repair_type','margin_convergence','footprint_coverage','graft_use','medialization','superior_capsule_reconstruction','tendon_transfer','acromioplasty','number_of_anchors','anchors_min','anchors_max'],
+  };
+  for (const [group, keys] of Object.entries(expected)) assert.deepEqual(FILTERS.filter(f=>f.group===group).map(f=>f.key).sort(), keys.sort());
+});
+
+test('anchor exact and inclusive numeric bounds with NULL and numeric sorting semantics', async () => {
+  const records = [null,0,2,4,10,20].map((n,i)=>surgery(`a${i}`,'p1',{number_of_anchors:n}));
+  for (const [filters, ids] of [[{number_of_anchors:'0'},['a1']], [{anchors_min:'4'},['a3','a4','a5']], [{anchors_max:'4'},['a1','a2','a3']], [{anchors_min:'2',anchors_max:'10'},['a2','a3','a4']]]) {
+    const {client} = fixtureClient(records);
+    assert.deepEqual((await searchCohort(client,request(filters),asOf)).rows.map(r=>r.id),ids);
+    const exported=[]; for await(const r of allCohortRows(client,request(filters),asOf)) exported.push(r.id);
+    assert.deepEqual(exported,ids);
+  }
+  for(const filters of [{anchors_min:'5',anchors_max:'2'},{number_of_anchors:'21'},{number_of_anchors:'-1'},{number_of_anchors:'1.5'},{number_of_anchors:'2',anchors_min:'3'}]) assert.equal(cohortRequestSchema.safeParse({filters}).success,false);
+});
+
+test('Excel clinical order and category membership preserve missingness', () => {
+  assert.deepEqual(EXPORT_COLUMNS.slice(0,8).map(c=>c.header),['Surgeon','Patient name','MRN','Age at search date','Sex','DM','Smoking','Side']);
+  const row = {...surgery('x','p1',{diagnosis:'Massive rotator cuff tear',tear_pattern:null,preop_imaging_source:null}),patient:patients[0]};
+  const value = name => EXPORT_COLUMNS.find(c=>c.header===name).value(row,asOf);
+  assert.equal(value('Massive tear'),'Yes'); assert.equal(value('Partial tear'),'No');
+  assert.equal(value('U shape'),'Not recorded'); assert.equal(value('Sono / Ultrasound'),'Not recorded');
+  assert.equal(new Set(EXPORT_COLUMNS.map(c=>c.header)).size,EXPORT_COLUMNS.length);
+});
+
+test('all 38 requested inputs and exact schema values are registered', () => {
   assert.deepEqual(FILTERS.map(f => f.key).sort(), [...Object.keys(selectionContract), ...nonSelectKeys].sort());
-  assert.equal(new Set(FILTERS.map(f => f.key)).size, 34);
+  assert.equal(new Set(FILTERS.map(f => f.key)).size, 38);
   for (const [key, [scope, options]] of Object.entries(selectionContract)) {
     const def = FILTERS.find(f => f.key === key);
     assert.equal(def.scope, scope);

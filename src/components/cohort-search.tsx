@@ -4,20 +4,21 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Download, Search, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { FILTERS, NULL_VALUE, ageAt, type CohortRequest, type FilterValues, type SortKey } from "@/lib/cohort/filters";
+import { FILTERS, GROUPS, NULL_VALUE, ageAt, type CohortRequest, type FilterValues, type SortKey } from "@/lib/cohort/filters";
 import type { CohortResult, CohortRow } from "@/lib/cohort/query";
 
-const GROUPS = ["Patient", "Surgery", "Subscapularis & biceps", "Repair", "Preoperative imaging"] as const;
 const COLUMNS: { key: SortKey; label: string }[] = [
   { key: "name", label: "Patient name" }, { key: "mrn", label: "MRN" }, { key: "age", label: "Age" }, { key: "sex", label: "Sex" },
   { key: "surgery_date", label: "Surgery date" }, { key: "side", label: "Side" }, { key: "surgeon", label: "Surgeon" },
-  { key: "revision_surgery", label: "Revision surgery" }, { key: "patte_grade", label: "Patte grade" },
+  { key: "revision_surgery", label: "Primary / Revision" }, { key: "patte_grade", label: "Patte grade" },
+  { key: "diagnosis", label: "Tear diagnosis" }, { key: "red_tear", label: "Red tear" }, { key: "anterior_cable_tear", label: "Anterior cable tear" }, { key: "number_of_anchors", label: "Anchor number" },
   { key: "tangent_sign", label: "Tangent sign" }, { key: "tear_pattern", label: "Tear pattern" },
   { key: "subscapularis_tear_type", label: "Subscapularis tear type" }, { key: "subscapularis_treatment", label: "Subscapularis treatment" },
   { key: "biceps_procedure", label: "Biceps procedure" }, { key: "footprint_coverage", label: "Footprint coverage" },
 ];
 const initialRequest: CohortRequest = { filters: {}, page: 1, sort: "surgery_date", direction: "desc" };
 function display(row: CohortRow, key: SortKey, asOf: string) {
+  if (key === "revision_surgery") return row.revision_surgery === true ? "Revision" : row.revision_surgery === false ? "Primary" : "Not recorded";
   const value = key === "age" ? ageAt(row.patient.birthday, asOf) : key === "name" || key === "mrn" || key === "sex" ? row.patient[key] : row[key];
   return value === null || value === undefined || value === "" ? "Not recorded" : typeof value === "boolean" ? (value ? "Yes" : "No") : String(value);
 }
@@ -127,12 +128,12 @@ export function CohortSearch() {
                           return next;
                         })}>
                         <option value="">Any</option>
-                        {def.options?.map(value => <option key={value} value={value}>{value === "true" ? "Yes" : value === "false" ? "No" : value}</option>)}
+                        {def.options?.map(value => <option key={value} value={value}>{def.key === "revision_surgery" ? (value === "true" ? "Revision" : "Primary") : value === "true" ? "Yes" : value === "false" ? "No" : value}</option>)}
                         <option value={NULL_VALUE}>{def.key === "diabetes_mellitus" || def.key === "smoking_status" ? "Unknown / Not recorded" : "Not recorded"}</option>
                       </select>
                     ) : (
-                      <input id={`cohort-${def.key}`} name={def.key} className="field mt-2 min-h-12 text-base" type={def.kind === "age" ? "number" : def.kind === "date" ? "date" : "text"}
-                        min={def.kind === "age" ? 0 : undefined} max={def.kind === "age" ? 150 : undefined} step={def.kind === "age" ? 1 : undefined}
+                      <input id={`cohort-${def.key}`} name={def.key} className="field mt-2 min-h-12 text-base" type={def.kind === "age" || def.kind === "number" ? "number" : def.kind === "date" ? "date" : "text"}
+                        min={def.kind === "age" || def.kind === "number" ? 0 : undefined} max={def.kind === "age" ? 150 : def.kind === "number" ? 20 : undefined} step={def.kind === "age" || def.kind === "number" ? 1 : undefined}
                         maxLength={def.kind === "text" ? 200 : undefined} placeholder={def.kind === "text" ? "Contains…" : "Any"}
                         value={draft[def.key] ?? ""} disabled={busy} onChange={event => setDraft(current => ({ ...current, [def.key]: event.target.value }))} />
                     )}
@@ -142,7 +143,7 @@ export function CohortSearch() {
             </details>
           ))}
         </div>
-        <p className="mt-3 text-xs text-muted">Age is calculated on the search date in Asia/Taipei. “Not recorded” means NULL, never No or None. Selecting a tenodesis location also requires a Tenodesis procedure.</p>
+        <p className="mt-3 text-xs text-muted">Age is calculated on the search date in Asia/Taipei. “Not recorded” means NULL, never No or None. Selecting a tenodesis location also requires a Tenodesis procedure. Partial / full-thickness / massive tears are the recorded diagnosis categories; U / L shapes are the recorded tear pattern. MRI / Sono filters the single recorded imaging source, not proof of all examinations performed. Anchor number is the stored total.</p>
         <div className="mt-5 flex flex-wrap gap-3">
           <Button type="submit" className="h-12" disabled={busy}><Search className="size-4" />{loading ? "Searching…" : "Search"}</Button>
           <Button type="button" variant="secondary" className="h-12" disabled={busy} onClick={clear}>Clear filters</Button>

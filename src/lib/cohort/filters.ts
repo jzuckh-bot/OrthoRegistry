@@ -3,16 +3,17 @@ import { z } from "zod";
 export const NULL_VALUE = "__null";
 export const PAGE_SIZE = 50;
 type Scope = "patient" | "surgery";
-type Group = "Patient" | "Surgery" | "Subscapularis & biceps" | "Repair" | "Preoperative imaging";
+export const GROUPS = ["Surgeon", "Patient", "Imaging / Preop", "Tear pattern", "Subscapularis", "Biceps", "Repair"] as const;
+type Group = typeof GROUPS[number];
 export type FilterDefinition = {
   key: string; label: string; scope: Scope; group: Group;
-  kind: "text" | "age" | "date" | "select";
+  kind: "text" | "age" | "date" | "select" | "number";
   column?: string; bound?: "min" | "max";
   options?: readonly string[];
 };
 const yesNo = ["true", "false"] as const;
 
-export const FILTERS: readonly FilterDefinition[] = [
+const existingFilters = [
   { key: "name", label: "Patient name", scope: "patient", group: "Patient", kind: "text" },
   { key: "mrn", label: "MRN", scope: "patient", group: "Patient", kind: "text" },
   { key: "sex", label: "Sex", scope: "patient", group: "Patient", kind: "select", options: ["Male", "Female", "Other"] },
@@ -49,7 +50,24 @@ export const FILTERS: readonly FilterDefinition[] = [
   { key: "preop_mri_date_to", label: "MRI date to", scope: "surgery", group: "Preoperative imaging", kind: "date", column: "preop_mri_date", bound: "max" },
 ];
 
-export const SORT_KEYS = ["name", "mrn", "age", "sex", "surgery_date", "side", "surgeon", "revision_surgery", "patte_grade", "tangent_sign", "tear_pattern", "subscapularis_tear_type", "subscapularis_treatment", "biceps_procedure", "footprint_coverage"] as const;
+const groupFor = (key: string): Group => {
+  if (key === "surgeon") return "Surgeon";
+  if (["name", "mrn", "sex", "age_min", "age_max", "diabetes_mellitus", "smoking_status", "side"].includes(key)) return "Patient";
+  if (["revision_surgery", "patte_grade", "tangent_sign"].includes(key) || key.startsWith("preop_") || key.startsWith("surgery_date")) return "Imaging / Preop";
+  if (["diagnosis", "tear_pattern", "red_tear", "anterior_cable_tear"].includes(key)) return "Tear pattern";
+  if (key.startsWith("subscapularis_")) return "Subscapularis";
+  if (["biceps_procedure", "tenodesis_location"].includes(key)) return "Biceps";
+  return "Repair";
+};
+export const FILTERS: readonly FilterDefinition[] = [
+  ...existingFilters.map(def => ({ ...def, group: groupFor(def.key), label: def.key === "revision_surgery" ? "Primary / Revision" : def.key === "preop_imaging_source" ? "MRI / Sono / Cloud imaging" : def.label } as FilterDefinition)),
+  { key: "diagnosis", label: "Tear diagnosis", scope: "surgery", group: "Tear pattern", kind: "select", options: ["Partial-thickness supraspinatus tear", "Full-thickness supraspinatus tear", "Massive rotator cuff tear"] },
+  { key: "number_of_anchors", label: "Anchor number (exact)", scope: "surgery", group: "Repair", kind: "number" },
+  { key: "anchors_min", label: "Minimum anchor number", scope: "surgery", group: "Repair", kind: "number", column: "number_of_anchors", bound: "min" },
+  { key: "anchors_max", label: "Maximum anchor number", scope: "surgery", group: "Repair", kind: "number", column: "number_of_anchors", bound: "max" },
+];
+
+export const SORT_KEYS = ["name", "mrn", "age", "sex", "surgery_date", "side", "surgeon", "revision_surgery", "patte_grade", "tangent_sign", "tear_pattern", "diagnosis", "red_tear", "anterior_cable_tear", "number_of_anchors", "subscapularis_tear_type", "subscapularis_treatment", "biceps_procedure", "footprint_coverage"] as const;
 export type SortKey = typeof SORT_KEYS[number];
 export type FilterValues = Record<string, string>;
 
@@ -79,10 +97,13 @@ const filterSchema = z.record(z.string().max(200)).superRefine((values, ctx) => 
     const invalid = !def || (value && (
       (def.kind === "select" && value !== NULL_VALUE && !def.options?.includes(value)) ||
       (def.kind === "age" && (!/^\d+$/.test(value) || Number(value) > 150)) ||
+      (def.kind === "number" && (!/^\d+$/.test(value) || Number(value) > 20)) ||
       (def.kind === "date" && !isDate(value))
     ));
     if (invalid) ctx.addIssue({ code: "custom", path: [key], message: `Invalid ${def?.label ?? "filter"}` });
   }
+  if (values.anchors_min && values.anchors_max && Number(values.anchors_min) > Number(values.anchors_max)) ctx.addIssue({ code: "custom", path: ["anchors_max"], message: "Minimum anchors must not exceed maximum" });
+  if (values.number_of_anchors && ((values.anchors_min && Number(values.number_of_anchors) < Number(values.anchors_min)) || (values.anchors_max && Number(values.number_of_anchors) > Number(values.anchors_max)))) ctx.addIssue({ code: "custom", path: ["number_of_anchors"], message: "Exact anchors must be within the selected range" });
   for (const [from, to] of [["age_min", "age_max"], ["surgery_date_from", "surgery_date_to"], ["preop_ultrasound_date_from", "preop_ultrasound_date_to"], ["preop_mri_date_from", "preop_mri_date_to"]]) {
     const a = values[from]?.trim(), b = values[to]?.trim();
     if (a && b && (from === "age_min" ? Number(a) > Number(b) : a > b)) ctx.addIssue({ code: "custom", path: [to], message: "Minimum/from must not exceed maximum/to" });
@@ -110,6 +131,8 @@ export function buildPredicates(filters: FilterValues, asOf: string): Predicate[
     const base = { scope: def.scope, column: def.column ?? def.key };
     if (def.kind === "age") {
       predicates.push({ scope: "patient", column: "birthday", operator: def.bound === "min" ? "lte" : "gt", value: yearsBefore(asOf, Number(value) + (def.bound === "max" ? 1 : 0)) });
+    } else if (def.kind === "number") {
+      predicates.push({ ...base, operator: def.bound === "min" ? "gte" : def.bound === "max" ? "lte" : "eq", value: Number(value) });
     } else if (def.kind === "date") {
       predicates.push({ ...base, operator: def.bound === "min" ? "gte" : "lte", value });
     } else if (def.kind === "text") {
