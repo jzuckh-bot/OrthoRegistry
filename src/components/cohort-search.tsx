@@ -31,6 +31,7 @@ async function checkResponse(response: Response) {
 }
 
 export function CohortSearch() {
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [draft, setDraft] = useState<FilterValues>({});
   const [applied, setApplied] = useState<CohortRequest>(initialRequest);
   const [result, setResult] = useState<CohortResult | null>(null);
@@ -102,7 +103,13 @@ export function CohortSearch() {
   return (
     <section className="surface mt-6 min-w-0 p-5 sm:p-7" aria-labelledby="cohort-title">
       <div className="flex items-center gap-3"><SlidersHorizontal className="size-5 text-primary" /><h2 id="cohort-title" className="text-xl font-bold">Cohort Search</h2></div>
-      <p className="mt-2 text-sm text-muted">Search the shared registry. All selected conditions must match the same surgery. One result per surgery; patients without surgery records are not included.</p>
+      <p className="mt-2 text-sm text-muted">Search patients and surgeries by clinical criteria.</p>
+      <Button type="button" variant="secondary" className="mt-4 h-12" aria-expanded={filtersOpen} aria-controls="cohort-filter-area" onClick={() => setFiltersOpen(open => !open)}>
+        {filtersOpen ? "Hide filters" : "Open filters"}
+      </Button>
+      {/* Keep controls mounted so hiding filters preserves values and accordion state. */}
+      <div id="cohort-filter-area" hidden={!filtersOpen}>
+      <p className="mt-4 text-sm text-muted">Search the shared registry. All selected conditions must match the same surgery. One result per surgery; patients without surgery records are not included.</p>
       <form onSubmit={submit} className="mt-5">
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <p className="text-sm text-muted">{FILTERS.length} filter inputs across {GROUPS.length} sections. Expand a section to choose conditions.</p>
@@ -150,10 +157,11 @@ export function CohortSearch() {
           <Button type="button" variant="secondary" className="h-12" disabled={busy || dirty || !result?.surgeries} onClick={() => void exportExcel()}><Download className="size-4" />{exporting ? "Exporting all matches…" : "Export Excel"}</Button>
         </div>
       </form>
+      </div>
       {dirty && result && <p className="mt-3 text-sm text-muted">Filters have changed. Press Search to update results and enable export.</p>}
       {error && <p role="alert" className="mt-4 rounded-xl bg-red-500/10 p-4 text-sm text-red-600">{error}</p>}
       {notice && <p role="status" className="mt-4 text-sm text-primary">{notice}</p>}
-      <div aria-live="polite" aria-busy={busy} className="mt-5">
+      <div aria-live="polite" aria-busy={busy} className={filtersOpen || result || busy ? "mt-5" : ""}>
         {loading ? <p className="text-sm text-muted">Searching matching patients and surgeries…</p> : result ? (
           <>
             <p className="font-semibold">{result.patients} patients / {result.surgeries} surgeries found</p>
@@ -189,7 +197,7 @@ export function CohortSearch() {
               </>
             )}
           </>
-        ) : <p className="text-sm text-muted">Choose filters and press Search, or search without filters for all surgery records.</p>}
+        ) : filtersOpen ? <p className="text-sm text-muted">Choose filters and press Search, or search without filters for all surgery records.</p> : null}
       </div>
     </section>
   );
