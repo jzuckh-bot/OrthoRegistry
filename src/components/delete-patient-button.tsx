@@ -26,6 +26,14 @@ export function DeletePatientButton({ id }: { id: string }) {
     setLoading(true);
 
     const supabase = createClient();
+    // Do not delete surgeries first if the new assessment FK would subsequently
+    // prevent patient deletion. Preserve all ASES until explicitly handled.
+    const { count: asesCount, error: asesError } = await supabase.from("ases_assessments").select("id", { count: "exact", head: true }).eq("patient_id", id);
+    if ((asesError && asesError.code !== "PGRST205" && asesError.code !== "42P01") || (asesCount ?? 0) > 0) {
+      setLoading(false);
+      setErrorMessage("Patient was not deleted. Please resolve existing ASES assessments first, or retry if assessments could not be checked. No surgeries were deleted.");
+      return;
+    }
     const { error: surgeryError } = await supabase
       .from("surgeries")
       .delete()

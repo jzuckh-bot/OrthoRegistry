@@ -27,9 +27,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </nav>
         <div className="absolute bottom-5 left-5 right-5 flex items-center justify-between"><SignOutButton /><ThemeToggle /></div>
       </aside>
-      <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-xl md:hidden">
+      <header className="sticky top-0 z-20 flex min-h-16 flex-wrap items-center justify-between gap-2 border-b bg-background/80 px-4 py-2 backdrop-blur-xl md:hidden">
         <Link href="/dashboard" className="flex items-center gap-2 font-bold"><span className="grid size-10 place-items-center overflow-hidden rounded-xl border bg-white"><Image src="/orthoregistry-logo.png" alt="" width={1254} height={1254} className="size-full object-contain" /></span>OrthoRegistry</Link>
-        <ThemeToggle />
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          <SignOutButton />
+          <ThemeToggle />
+        </div>
       </header>
       <main className="mx-auto max-w-7xl p-4 pb-24 md:ml-64 md:p-8">{children}</main>
       <nav className="fixed inset-x-0 bottom-0 z-30 flex justify-around border-t bg-card/95 px-2 py-2 backdrop-blur-xl md:hidden">

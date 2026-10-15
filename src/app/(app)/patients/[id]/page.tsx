@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { DeletePatientButton } from "@/components/delete-patient-button";
 import { formatDate } from "@/lib/utils";
 import type { Patient, Surgery } from "@/lib/database.types";
+import { AsesPanel } from "@/components/ases-panel";
+import { todayInTaipei } from "@/lib/cohort/filters";
 
 export default async function PatientDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -50,6 +52,7 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
           {!surgeryError && !surgeries?.length && <div className="p-8 text-center"><p className="text-sm text-muted">No rotator cuff surgeries recorded.</p><Link href={`/patients/${id}/surgeries/new`} className="mt-3 inline-block text-sm font-semibold text-primary">Add the first surgery</Link></div>}
         </div>
       </section>
+      <AsesPanel patientId={id} today={todayInTaipei()} surgeries={(surgeries ?? []).map(({id,surgery_date,side,surgeon})=>({id,surgery_date,side,surgeon}))} />
     </div>
   );
 }
